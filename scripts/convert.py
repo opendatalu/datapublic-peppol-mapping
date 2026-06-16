@@ -14,7 +14,7 @@ from pathlib import Path
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
 
-DELIMITER = ";"
+DELIMITER = ","
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CSV = REPO_ROOT / "datapublic-peppol-mapping-source.csv"
 # Base name for the generated (filtered) output files.
