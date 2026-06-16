@@ -32,3 +32,4 @@ jobs:
             datapublic-peppol-mapping.json
             datapublic-peppol-mapping.xml
             datapublic-peppol-mapping.csv
+            organizations-without-peppol-id.csv

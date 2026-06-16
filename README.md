@@ -16,6 +16,7 @@ The "superset" and "group" relationships do not enable to find a data.public.lu 
 
 You can find the data from this project converted in various output formats in the [releases section](https://github.com/opendatalu/datapublic-peppol-mapping/releases/tag/latest) of this project.
 
+We have added one file to this release named organizations-without-peppol-id.csv which contains the list of organisations on data.public.lu which are not yet part of this mapping.
 
 ## Datasources
 

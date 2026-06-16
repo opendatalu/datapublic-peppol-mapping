@@ -10,6 +10,7 @@ import argparse
 import csv
 import json
 import sys
+import urllib.request
 from pathlib import Path
 from xml.dom import minidom
 from xml.etree import ElementTree as ET
@@ -19,10 +20,19 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CSV = REPO_ROOT / "datapublic-peppol-mapping-source.csv"
 # Base name for the generated (filtered) output files.
 OUTPUT_BASE = "datapublic-peppol-mapping"
+# Output file listing data.public.lu organizations that have no Peppol ID.
+MISSING_BASE = "organizations-without-peppol-id"
 
 # Relationship types to exclude from the generated output.
 EXCLUDED_RELATIONS = {"group", "superset"}
 RELATION_KEY = "relation"
+UDATA_ID_KEY = "udata_id"
+PEPPOL_ID_KEY = "peppol_id"
+
+# Paginated endpoint listing all organizations published on data.public.lu.
+ORGANIZATIONS_URL = "https://data.public.lu/api/1/organizations/?page=1&page_size=20"
+# Only consider organizations carrying all of these badge "kind" values.
+REQUIRED_BADGES = {"certified", "public-service"}
 
 
 def slugify(name: str) -> str:
@@ -34,7 +44,7 @@ def slugify(name: str) -> str:
     return slug or "field"
 
 
-def read_rows(csv_path: Path) -> list[dict[str, str]]:
+def read_rows(csv_path: Path, apply_filter: bool = True) -> list[dict[str, str]]:
     with csv_path.open(newline="", encoding="utf-8-sig") as fh:
         reader = csv.reader(fh, delimiter=DELIMITER)
         try:
@@ -51,10 +61,54 @@ def read_rows(csv_path: Path) -> list[dict[str, str]]:
             if not any(cell.strip() for cell in raw):
                 continue  # skip blank lines
             row = {keys[i]: raw[i].strip() if i < len(raw) else "" for i in keep}
-            if row.get(RELATION_KEY, "").lower() in EXCLUDED_RELATIONS:
+            if apply_filter and row.get(RELATION_KEY, "").lower() in EXCLUDED_RELATIONS:
                 continue  # filter out group/superset relationships
             rows.append(row)
         return rows
+
+
+def mapped_udata_ids(csv_path: Path) -> set[str]:
+    """udata IDs that already have a (non-empty) Peppol ID, across all relations."""
+    return {
+        row[UDATA_ID_KEY]
+        for row in read_rows(csv_path, apply_filter=False)
+        if row.get(UDATA_ID_KEY) and row.get(PEPPOL_ID_KEY)
+    }
+
+
+def fetch_organizations(start_url: str = ORGANIZATIONS_URL) -> list[dict]:
+    """Fetch every organization on data.public.lu, following pagination."""
+    organizations: list[dict] = []
+    url = start_url
+    while url:
+        request = urllib.request.Request(url, headers={"Accept": "application/json"})
+        with urllib.request.urlopen(request, timeout=60) as response:
+            payload = json.load(response)
+        for org in payload.get("data", []):
+            kinds = {badge.get("kind") for badge in (org.get("badges") or [])}
+            if REQUIRED_BADGES <= kinds:
+                organizations.append(org)
+        url = payload.get("next_page")
+    return organizations
+
+
+def organizations_without_peppol(
+    organizations: list[dict], mapped_ids: set[str]
+) -> list[dict[str, str]]:
+    """Organizations whose udata ID is not present in the mapping."""
+    missing = []
+    for org in organizations:
+        if org.get("id") in mapped_ids:
+            continue
+        missing.append(
+            {
+                "udata_id": org.get("id") or "",
+                "name": org.get("name") or "",
+                "acronym": org.get("acronym") or "",
+                "page": org.get("page") or "",
+            }
+        )
+    return missing
 
 
 def write_json(rows: list[dict[str, str]], out_path: Path) -> None:
@@ -96,6 +150,11 @@ def main(argv: list[str] | None = None) -> int:
         "-o", "--output-dir", type=Path, default=REPO_ROOT,
         help="Directory to write the JSON and XML files into.",
     )
+    parser.add_argument(
+        "--no-missing", action="store_true",
+        help="Skip fetching data.public.lu organizations without a Peppol ID "
+             "(avoids the network call).",
+    )
     args = parser.parse_args(argv)
 
     if not args.csv.exists():
@@ -116,6 +175,18 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  -> {json_path}")
     print(f"  -> {xml_path}")
     print(f"  -> {csv_path}")
+
+    if not args.no_missing:
+        organizations = fetch_organizations()
+        missing = organizations_without_peppol(organizations, mapped_udata_ids(args.csv))
+        missing_path = args.output_dir / f"{MISSING_BASE}.csv"
+        write_csv(missing, missing_path)
+        print(
+            f"Found {len(missing)} of {len(organizations)} organizations "
+            f"without a Peppol ID"
+        )
+        print(f"  -> {missing_path}")
+
     return 0
 
 
