@@ -1,4 +1,4 @@
-# datapublic-peppol-mapping
+# data.public.lu - Peppol mapping
 
 The goal of this project is to map all public sector organisations on data.public.lu with their respective Peppol ID.
 
