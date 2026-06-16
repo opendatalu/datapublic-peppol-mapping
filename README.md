@@ -4,6 +4,19 @@ The goal of this project is to map all public sector organisations on data.publi
 
 The main source file for this mapping is the CSV file named datapublic-peppol-mapping-source.csv. If you find any mistake in this file, please send us a pull request.
 
+In the source file, there are four types of relationships for the mapping between an organisation and a Peppol ID:
+- same
+- subset: the data.public.lu organisation is part of the organisation corresponding to the Peppol ID
+- superset: the organisation corresponding to the Peppol ID is part of the data.public.lu organisation
+- group: the organisation on data.public.lu corresponds to two or more Peppol IDs.
+
+The "superset" and "group" relationships do not enable to find a data.public.lu organization by its Peppol ID. These relationships are filtered out in the released files.
+
+## Releases
+
+You can find the data from this project converted in various output formats in the [releases section](https://github.com/opendatalu/datapublic-peppol-mapping/releases/tag/latest) of this project.
+
+
 ## Datasources
 
 ### Data.public.lu
