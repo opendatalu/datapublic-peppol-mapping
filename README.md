@@ -2,7 +2,7 @@
 
 The goal of this project is to map all public sector organisations on data.public.lu with their respective Peppol ID.
 
-The main source file for this mapping is the CSV file named datapublic-peppol-mapping-source.csv. If you find any mistake in this file, please send us a pull request.
+The main source file for this mapping is the CSV file named [datapublic-peppol-mapping-source.csv](./datapublic-peppol-mapping-source.csv). If you find any mistake in this file, please send us a pull request.
 
 In the source file, there are four types of relationships for the mapping between an organisation and a Peppol ID:
 - same
