@@ -18,6 +18,10 @@ You can find the data from this project converted in various output formats in t
 
 We have added one file to this release named organizations-without-peppol-id.csv which contains the list of organisations on data.public.lu which are not yet part of this mapping.
 
+Two further files report inconsistencies found between the source file and the reference APIs (an `issue_source` column tells whether the problem comes from `data.public.lu` or from `Peppol`):
+- unknown-ids.csv: source rows whose data.public.lu or Peppol ID is not found in the corresponding API.
+- name-mismatches.csv: source rows whose data.public.lu or Peppol name differs from the one returned by the corresponding API.
+
 ## Datasources
 
 ### Data.public.lu
